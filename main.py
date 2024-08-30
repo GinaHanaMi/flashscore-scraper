@@ -1,3 +1,5 @@
+import enum
+from token import STAR
 from openpyxl import load_workbook, workbook
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -97,19 +99,56 @@ def write_first_part_excel():
         
 
 def scrape_from_link():
-    for i in link_to_details:
+    for k, i in enumerate(link_to_details, start=2):
         driver.get(i)
-        
+        time.sleep(2)
+
         event_section_one = driver.find_elements(By.CLASS_NAME, "h2h__section")[0]
-        event_section_one_events_icon = event_section_one.find_elements(By.CLASS_NAME, "h2h__icon") #dodalem s do element
+        event_section_one_events_icon = event_section_one.find_elements(By.CLASS_NAME, "h2h__icon")
         
-        for x in len(event_section_one_events_icon):
+        event_section_one_events_outcome = []
+
+        for x in range(len(event_section_one_events_icon)):
             event_section_one_events_icon = event_section_one.find_elements(By.CLASS_NAME, "h2h__icon")[x]
             event_section_one_events_icon_title = event_section_one_events_icon.find_element(By.TAG_NAME, "div").get_attribute('title')
-            print(event_section_one_events_icon_title)
-        
+            event_section_one_events_outcome.append(event_section_one_events_icon_title)
+            
+        for j, one_data in enumerate(event_section_one_events_outcome, start=5):
+            ws.cell(row=k, column=j, value=one_data)
 
-        # event_section_one_events_icon = event_section_one.find_elements(By.CLASS_NAME, "h2h__icon")
+
+        event_section_two = driver.find_elements(By.CLASS_NAME, "h2h__section")[1]
+        event_section_two_events_icon = event_section_two.find_elements(By.CLASS_NAME, "h2h__icon")
+        
+        event_section_two_events_outcome = []
+
+        for x in range(len(event_section_two_events_icon)):
+            event_section_two_events_icon = event_section_two.find_elements(By.CLASS_NAME, "h2h__icon")[x]
+            event_section_two_events_icon_title = event_section_two_events_icon.find_element(By.TAG_NAME, "div").get_attribute('title')
+            event_section_two_events_outcome.append(event_section_two_events_icon_title)
+            
+
+        for j, two_data in enumerate(event_section_one_events_outcome, start=10):
+            ws.cell(row=k, column=j, value=two_data)
+            
+
+        # ON POWINIEN SCRPAOWAC DANE 4:5, a nie przegrana wygrana. DO POPRAWY!
+
+        event_section_three = driver.find_elements(By.CLASS_NAME, "h2h__section")[1]
+        event_section_three_events_icon = event_section_three.find_elements(By.CLASS_NAME, "h2h__icon")
+        
+        event_section_three_events_outcome = []
+
+        for x in range(len(event_section_three_events_icon)):
+            event_section_three_events_icon = event_section_three.find_elements(By.CLASS_NAME, "h2h__icon")[x]
+            event_section_three_events_icon_title = event_section_three_events_icon.find_element(By.TAG_NAME, "div").get_attribute('title')
+            event_section_three_events_outcome.append(event_section_three_events_icon_title)
+            
+
+        for j, three_data in enumerate(event_section_one_events_outcome, start=15):
+            ws.cell(row=k, column=j, value=three_data)
+            
+        
         
 
         
@@ -117,21 +156,21 @@ def scrape_from_link():
 
 def main():
     for x in range(1):
-        # reveal_all_events()
+        reveal_all_events()
         scrape_all_events()
-        view_previous_day()
+        # view_previous_day()
 
     scrape_from_link()
     
-    # write_first_part_excel()
+    write_first_part_excel()
     
 
 
 
 
 
-    # wb.save(f"data {datetime_now.strftime('%d')}-{datetime_now.strftime('%m')}-{datetime_now.strftime('%Y')} {datetime_now.strftime('%H')}-{datetime_now.strftime('%M')}.xlsx")
-    # wb.close()
+    wb.save(f"data {datetime_now.strftime('%d')}-{datetime_now.strftime('%m')}-{datetime_now.strftime('%Y')} {datetime_now.strftime('%H')}-{datetime_now.strftime('%M')}.xlsx")
+    wb.close()
     driver.quit()
     
 main()
