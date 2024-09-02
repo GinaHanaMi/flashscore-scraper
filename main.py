@@ -5,6 +5,10 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+
 import os
 
 import openpyxl
@@ -13,6 +17,7 @@ import time
 import datetime
 
 datetime_now = datetime.datetime.now()
+
 
 flashscore_main_site_url = 'https://www.flashscore.pl/'
 
@@ -54,6 +59,8 @@ driver.get(flashscore_main_site_url)
 accept_cookies = driver.find_element(By.ID, "onetrust-accept-btn-handler")
 accept_cookies.click()
 
+saving_data = []
+
 def reveal_all_events():
     time.sleep(5)
 
@@ -81,9 +88,12 @@ def scrape_all_events():
         event_link = event_link.replace("#/szczegoly-meczu", "#/h2h/overall")
         link_to_details.append(event_link)
 
+        saving_data.append(driver.find_element(By.ID, "calendarMenu").get_attribute("textContent").strip())
+
 def view_previous_day():
     previous_day_button = driver.find_element(By.CLASS_NAME, "calendar__navigation--yesterday")
     previous_day_button.click()
+    
 
 def write_first_part_excel():
     for i, home_name_var in enumerate(home_name, start=2):
@@ -94,14 +104,15 @@ def write_first_part_excel():
         
     for i, link_to_details_var in enumerate(link_to_details, start=2):
         ws.cell(row=i, column=2, value=link_to_details_var)
-        
-    #DODAC DATE DO KAZDEGO EVENTU
-        
+
+    for i, saving_data_var in enumerate(saving_data, start=2):
+        ws.cell(row=i, column=1, value=saving_data_var)
 
 def scrape_from_link():
     for k, i in enumerate(link_to_details, start=2):
         driver.get(i)
-        time.sleep(2)
+        
+        elem = WebDriverWait(driver, 4, poll_frequency=0.1).until(EC.presence_of_element_located((By.CLASS_NAME, "h2h__section")))
 
         event_section_one = driver.find_elements(By.CLASS_NAME, "h2h__section")[0]
         event_section_one_events_icon = event_section_one.find_elements(By.CLASS_NAME, "h2h__icon")
@@ -128,48 +139,40 @@ def scrape_from_link():
             event_section_two_events_outcome.append(event_section_two_events_icon_title)
             
 
-        for j, two_data in enumerate(event_section_one_events_outcome, start=10):
+        for j, two_data in enumerate(event_section_two_events_outcome, start=10):
             ws.cell(row=k, column=j, value=two_data)
             
 
-        # ON POWINIEN SCRPAOWAC DANE 4:5, a nie przegrana wygrana. DO POPRAWY!
-
-        event_section_three = driver.find_elements(By.CLASS_NAME, "h2h__section")[1]
-        event_section_three_events_icon = event_section_three.find_elements(By.CLASS_NAME, "h2h__icon")
+       
+        event_section_three = driver.find_elements(By.CLASS_NAME, "h2h__section")[2]
+        event_section_three_rows = event_section_three.find_elements(By.CLASS_NAME, "h2h__row")
         
         event_section_three_events_outcome = []
+        
+        for x in range(len(event_section_three_rows)):
+            event_section_three_result = event_section_three_rows[x].find_element(By.CLASS_NAME, "h2h__result")
+            event_section_three_result_score_win = event_section_three_result.find_elements(By.TAG_NAME, "span")[0].get_attribute('innerHTML')
+            event_section_three_result_score_lose = event_section_three_result.find_elements(By.TAG_NAME, "span")[1].get_attribute('innerHTML')
+            event_section_three_events_outcome.append(f"{event_section_three_result_score_win} : {event_section_three_result_score_lose}")
 
-        for x in range(len(event_section_three_events_icon)):
-            event_section_three_events_icon = event_section_three.find_elements(By.CLASS_NAME, "h2h__icon")[x]
-            event_section_three_events_icon_title = event_section_three_events_icon.find_element(By.TAG_NAME, "div").get_attribute('title')
-            event_section_three_events_outcome.append(event_section_three_events_icon_title)
-            
-
-        for j, three_data in enumerate(event_section_one_events_outcome, start=15):
+        
+        for j, three_data in enumerate(event_section_three_events_outcome, start=15):
             ws.cell(row=k, column=j, value=three_data)
-            
-        
-        
-
         
         
 
 def main():
-    for x in range(1):
+    for x in range(2):
         reveal_all_events()
         scrape_all_events()
-        # view_previous_day()
-
-    scrape_from_link()
+        view_previous_day()
     
     write_first_part_excel()
+    scrape_from_link()
     
-
-
-
-
-
+    
     wb.save(f"data {datetime_now.strftime('%d')}-{datetime_now.strftime('%m')}-{datetime_now.strftime('%Y')} {datetime_now.strftime('%H')}-{datetime_now.strftime('%M')}.xlsx")
+    
     wb.close()
     driver.quit()
     
