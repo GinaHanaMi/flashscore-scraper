@@ -4,6 +4,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.options import PageLoadStrategy
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import threading
@@ -40,6 +41,7 @@ chrome_options = Options()
 chrome_options.add_argument("--disable-search-engine-choice-screen")
 chrome_options.add_argument('--headless')
 chrome_options.add_argument('--disable-gpu')
+
 
 driver = webdriver.Chrome(service=service, options=chrome_options)
 # driver.maximize_window()
@@ -229,20 +231,22 @@ def scrape_from_link(process_number, equal_part, len_proc_num, driver):
                         driver.get(i)
                     except:
                         continue
-                        
+    
 
         if not cookie_clicked:
             try:
+                elem = WebDriverWait(driver, 5, poll_frequency=0.1).until(EC.presence_of_element_located((By.ID, "onetrust-accept-btn-handler")))
                 accept_cookies = driver.find_element(By.ID, "onetrust-accept-btn-handler").click()
                 cookie_clicked = True
             except Exception as e:
                 print(f"Cookies already accepted or not found for process {process_number}: {str(e)}")
 
         the_rest(driver)
+    driver.quit()
 
 def run_in_parallel():
     print("Running in parallel...")
-    process_numbers = [0, 1]  # Adjust as needed
+    process_numbers = [0, 1, 2]  # Adjust as needed
     len_proc_num = len(process_numbers)
     total_links = len(link_to_details)
 
@@ -251,7 +255,9 @@ def run_in_parallel():
 
     # Initialize drivers for each thread
     drivers = []
+    
     for _ in process_numbers:
+        chrome_options.page_load_strategy = "none"
         drivers.append(webdriver.Chrome(service=service, options=chrome_options))
 
     # Submit tasks to ThreadPoolExecutor
@@ -271,7 +277,7 @@ def run_in_parallel():
 
 def main():
     
-    for x in range(5):
+    for x in range(2):
         print(f"Days started {x}")
         reveal_all_events()
         scrape_all_events()
