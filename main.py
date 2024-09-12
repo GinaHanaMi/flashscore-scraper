@@ -31,7 +31,7 @@ saving_data = []
 wb = load_workbook(filename="template.xlsx")
 ws = wb.active
 
-universal_class = "_simpleText_lsjrv_4"
+
 
 chromedriver_path = os.path.join(os.getcwd(), 'chromedriver/chromedriver.exe')
 service = Service(chromedriver_path)
@@ -46,6 +46,10 @@ chrome_options.add_argument('--disable-gpu')
 driver = webdriver.Chrome(service=service, options=chrome_options)
 # driver.maximize_window()
 driver.get(flashscore_main_site_url)
+
+universal_class = driver.execute_script("let universal_class = document.querySelector('.event__homeParticipant').querySelector('span').getAttribute('class').split(' ')[0]; return universal_class;")
+
+elem = WebDriverWait(driver, 5, poll_frequency=0.2).until(EC.presence_of_element_located((By.ID, "onetrust-accept-btn-handler")))
 accept_cookies = driver.find_element(By.ID, "onetrust-accept-btn-handler").click()
 
 
@@ -55,36 +59,36 @@ def view_previous_day():
     previous_day_button = driver.find_element(By.CLASS_NAME, "calendar__navigation--yesterday").click()
 
 def reveal_all_events():
-    driver.execute_script("""
-    document.querySelectorAll('._simpleText_lsjrv_4').forEach((span_puppet, index) => {
-        if (span_puppet.parentElement.nodeName === "BUTTON") {
+    driver.execute_script(f"""
+    document.querySelectorAll('.{universal_class}').forEach((span_puppet, index) => {{
+        if (span_puppet.parentElement.nodeName === "BUTTON") {{
             span_puppet.parentElement.click();
-        };
-    });
+        }};
+    }});
     """)
 
 def scrape_all_events():
-    home_name_scraped = driver.execute_script("""
+    home_name_scraped = driver.execute_script(f"""
         let event_divs = document.querySelectorAll(".event__match");
         let home_name_result = [];
         event_divs.forEach((event_div, index) => 
-        {
-        let home_name = event_div.querySelector(".event__homeParticipant").querySelector("._simpleText_lsjrv_4").textContent; 
+        {{
+        let home_name = event_div.querySelector(".event__homeParticipant").querySelector(".{universal_class}").textContent; 
         home_name_result.push(home_name)
-        });     
+        }});     
         return home_name_result;
     """)
     
     home_name.extend(home_name_scraped)
     
-    away_name_scraped = driver.execute_script("""
+    away_name_scraped = driver.execute_script(f"""
         let event_divs = document.querySelectorAll(".event__match");
         let away_name_result = [];
         event_divs.forEach((event_div, index) => 
-        {
-        let away_name = event_div.querySelector(".event__awayParticipant").querySelector("._simpleText_lsjrv_4").textContent; 
+        {{
+        let away_name = event_div.querySelector(".event__awayParticipant").querySelector(".{universal_class}").textContent; 
         away_name_result.push(away_name)
-        });     
+        }});     
         return away_name_result;
     """)
     
@@ -246,7 +250,7 @@ def scrape_from_link(process_number, equal_part, len_proc_num, driver):
 
 def run_in_parallel():
     print("Running in parallel...")
-    process_numbers = [0, 1, 2]  # Adjust as needed
+    process_numbers = [0, 1]  # Adjust as needed
     len_proc_num = len(process_numbers)
     total_links = len(link_to_details)
 
@@ -277,7 +281,7 @@ def run_in_parallel():
 
 def main():
     
-    for x in range(2):
+    for x in range(5):
         print(f"Days started {x}")
         reveal_all_events()
         scrape_all_events()
